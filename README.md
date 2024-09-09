@@ -10,7 +10,7 @@ Resulting In
 
 TOP PRIORITY PIECIES -> |||||  <br/> 
 DEFAULT PRIORITY PIECIES -> |||||  <br/>             
-THREE PRIORITY PIECIES -> |||||  <br/> 
+THREE PRIORITY PIECIES -> |||||  
 
 ++----------+ <br/> 
 +++---------+ <br/> 
