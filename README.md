@@ -5,10 +5,10 @@
 - Setting 5 first incomplete piecies with TOP_PRIORITY
 - Setting 5 first incomplete piecies that dont have TOP_PRIORITY to DEFAULT_PRIORITY
 - Setting 5 first incomplete piecies that dont have TOP_PRIORITY & DEFAULT_PRIORITY TO THREE_PRIORITY
-- 
+
 Resulting In
 
-  TOP      DEFAULT  THREE
+  TOP      DEFAULT  THREE <br/> 
   [|||||]  [|||||]  [|||||]
 
 ++----------+
