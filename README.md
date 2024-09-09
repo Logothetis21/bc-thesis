@@ -1,7 +1,12 @@
+### TODO
+1. CREATE HTTP SERVER TO SERVE VIDEO FILE BASED ON PATH.
+2. FIX BROKEN PIPE ON HTTP SERVER WHILE SERVING WITH VLC (IF POSSIBLE)
+
+
 ### Technologies Used
--- VLC
--- Libtorrent4j
--- Java
+- VLC
+- Libtorrent4j
+- Java
 
 ### Interfaces
 
