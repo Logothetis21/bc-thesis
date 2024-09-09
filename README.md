@@ -8,7 +8,7 @@
 - 
 Resulting In
 
-    TOP    DEFAULT   THREE
+  TOP      DEFAULT  THREE
   [|||||]  [|||||]  [|||||]
 
 ++----------+
