@@ -1,15 +1,16 @@
 ### Method Used For Streaming
 - We identify piecies of video file inside torrent.
 - We download first 5 and last piecies resulting in + ---------- +
-- We continue downloading sequantial from the start
+- We continue downloading sequential from the start
 - Setting 5 first incomplete piecies with TOP_PRIORITY
 - Setting 5 first incomplete piecies that dont have TOP_PRIORITY to DEFAULT_PRIORITY
 - Setting 5 first incomplete piecies that dont have TOP_PRIORITY & DEFAULT_PRIORITY TO THREE_PRIORITY
 
 Resulting In
 
-  TOP                 DEFAULT            THREE <br/> 
-  [|||||]             [|||||]            [|||||]
+TOP PRIORITY PIECIES -> |||||  <br/> 
+DEFAULT PRIORITY PIECIES -> |||||  <br/>             
+THREE PRIORITY PIECIES -> |||||  <br/> 
 
 ++----------+ <br/> 
 +++---------+ <br/> 
