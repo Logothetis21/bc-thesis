@@ -1,0 +1,31 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:orientation="vertical"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content">
+
+    <FrameLayout android:layout_width="match_parent" android:layout_height="175dp">
+        <ImageView android:foreground="@drawable/background_img_overlay" android:id="@+id/movie_background_adapter" android:layout_width="match_parent" android:layout_height="match_parent" android:scaleType="centerCrop"/>
+        <ImageButton android:id="@+id/goBack" android:padding="16dp" android:layout_width="wrap_content" android:layout_height="wrap_content" android:layout_gravity="top|start" android:src="@drawable/left_arrow" android:clickable="true" android:background="@color/transparent" android:foreground="?android:attr/selectableItemBackgroundBorderless"/>
+    </FrameLayout>
+
+    <FrameLayout android:layout_marginTop="-40dp" android:layout_width="match_parent" android:layout_height="80dp">
+        <ImageView android:padding="12dp" android:id="@+id/logo_img" android:layout_width="match_parent" android:layout_height="64dp" android:layout_gravity="bottom|center_horizontal" android:layout_marginBottom="1dp" />
+    </FrameLayout>
+
+    <!--  Runtime Year Imdb  -->
+    <androidx.recyclerview.widget.RecyclerView android:id="@+id/year_runtime_imdb" android:layout_width="match_parent" android:layout_height="wrap_content"></androidx.recyclerview.widget.RecyclerView>
+    <TextView android:id="@+id/description" android:layout_width="match_parent" android:layout_height="wrap_content" android:padding="16dp"></TextView>
+    <androidx.recyclerview.widget.RecyclerView android:id="@+id/genre" android:layout_width="match_parent" android:layout_height="wrap_content"></androidx.recyclerview.widget.RecyclerView>
+
+    <TextView android:layout_marginTop="16dp" android:layout_marginLeft="16dp" android:textColor="#ffffffe6" android:id="@+id/var_01" android:text="DIRECTOR" android:layout_width="wrap_content" android:layout_height="wrap_content"></TextView>
+    <androidx.recyclerview.widget.RecyclerView android:layout_marginRight="16dp" android:id="@+id/director" android:layout_width="match_parent" android:layout_height="wrap_content"></androidx.recyclerview.widget.RecyclerView>
+
+    <TextView android:layout_marginTop="16dp" android:layout_marginLeft="16dp" android:textColor="#ffffffe6" android:id="@+id/var_02" android:text="CAST" android:layout_width="wrap_content" android:layout_height="wrap_content"></TextView>
+    <androidx.recyclerview.widget.RecyclerView android:layout_marginRight="16dp" android:id="@+id/cast" android:layout_width="match_parent" android:layout_height="wrap_content"></androidx.recyclerview.widget.RecyclerView>
+
+    <TextView android:layout_marginTop="16dp" android:layout_marginLeft="16dp" android:textColor="#ffffffe6" android:id="@+id/var_03" android:text="WRITER" android:layout_width="wrap_content" android:layout_height="wrap_content"></TextView>
+    <androidx.recyclerview.widget.RecyclerView android:layout_marginRight="16dp" android:id="@+id/writer" android:layout_width="match_parent" android:layout_height="wrap_content"></androidx.recyclerview.widget.RecyclerView>
+
+
+</LinearLayout>
