@@ -4,15 +4,17 @@ plugins {
 
 android {
     namespace = "gr.xmp.torstream"
-    compileSdk = 35
+    compileSdk = 34
+    // Link Gradle
+
+
 
     defaultConfig {
         applicationId = "gr.xmp.torstream"
         minSdk = 24
-        targetSdk = 34
+        targetSdk = 35
         versionCode = 1
         versionName = "1.0"
-
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
     }
 
@@ -57,5 +59,5 @@ dependencies {
     implementation ("org.libtorrent4j:libtorrent4j-android-x86:2.1.0-31")
 
 
-    implementation("androidx.recyclerview:recyclerview:1.4.0-beta01")
+    implementation("androidx.recyclerview:recyclerview:1.3.2")
 }

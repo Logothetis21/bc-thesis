@@ -36,7 +36,6 @@ import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 
 import gr.xmp.torstream.R;
-import gr.xmp.torstream.VideoServer;
 import gr.xmp.torstream.databinding.ActivityStreamingBinding;
 
 
@@ -64,7 +63,6 @@ public class StreamingActivity extends AppCompatActivity {
     private static Priority init_val_for_priorites = Priority.IGNORE;
 
 
-    private VideoServer server = null; // Server that serves the video file
     private String vPath; // Video File Path
     private static int flags = View.SYSTEM_UI_FLAG_LAYOUT_STABLE
             | View.SYSTEM_UI_FLAG_LAYOUT_HIDE_NAVIGATION
@@ -427,7 +425,7 @@ public class StreamingActivity extends AppCompatActivity {
         }
     };
     private class TorrentAlert implements AlertListener{
-
+        boolean server = false;
         @Override public int[] types() {return null;}
         @Override public void alert(Alert<?> alert) {
             switch (alert.type()) {
@@ -442,14 +440,11 @@ public class StreamingActivity extends AppCompatActivity {
                     }
 
                     if(original_piecies_ready()) {
-                        if(server == null) {
+                        if(server == false) {
+                            server = true;
                             // Run Once
                             /** Testing::Comment **/
                             torrent_handle_next();
-                            try {
-                                server = new VideoServer(port , getFilesDir() + "/" + vPath);
-                                server.start();
-                            } catch (IOException e) {throw new RuntimeException(e);}
                             setMediaVLC();
                         }
                     }

@@ -19,7 +19,6 @@ import org.json.JSONObject;
 
 import java.io.IOException;
 import java.util.ArrayList;
-
 import gr.xmp.torstream.databinding.ActivityMainBinding;
 
 import gr.xmp.torstream.models.Movie;
@@ -31,6 +30,8 @@ import gr.xmp.torstream.adapters.MovieLabelAdapter;
 
 
 public class MainActivity extends AppCompatActivity {
+
+
     private static final String TAG = "APP";
     private ArrayList<Movie> list = new ArrayList<>();
     private MovieLabelAdapter adapter;
@@ -53,6 +54,7 @@ public class MainActivity extends AppCompatActivity {
         binding.metas.setAdapter(adapter);
         fetch_meta();
     }
+
 
     void fetch_meta(){
         new Thread(() ->{
