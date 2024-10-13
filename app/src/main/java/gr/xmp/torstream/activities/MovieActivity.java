@@ -68,6 +68,7 @@ public class MovieActivity extends AppCompatActivity {
             Intent i = new Intent(this , StreamingActivity.class);
             i.putExtra("magnet" , fetch_magnet_link(h.hash));
             i.putExtra("fileIdx" , h.fileIndx);
+            i.putExtra("logo_url" , ((Movie) getIntent().getSerializableExtra("movie_object")).logo_img);
             startActivity(i);
             overridePendingTransition(0,0);
         });

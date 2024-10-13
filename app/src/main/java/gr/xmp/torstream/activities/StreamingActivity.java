@@ -10,11 +10,19 @@ import android.view.SurfaceView;
 import android.view.View;
 import android.view.Window;
 import android.view.WindowManager;
+import android.view.animation.AlphaAnimation;
+import android.view.animation.Animation;
+import android.view.animation.LinearInterpolator;
+import android.widget.LinearLayout;
 import android.widget.MediaController;
 
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.appcompat.app.AppCompatDelegate;
+import androidx.appcompat.widget.AppCompatSeekBar;
 
+
+import com.bumptech.glide.Glide;
+import com.google.android.material.textview.MaterialTextView;
 
 import org.libtorrent4j.*;
 import org.libtorrent4j.alerts.*;
@@ -25,8 +33,11 @@ import org.videolan.libvlc.interfaces.IVLCVout;
 
 import java.io.File;
 import java.io.IOException;
+import java.text.CharacterIterator;
+import java.text.StringCharacterIterator;
 import java.util.ArrayList;
 import java.util.Collections;
+import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Iterator;
 import java.util.Set;
@@ -42,28 +53,19 @@ import gr.xmp.torstream.databinding.ActivityStreamingBinding;
 public class StreamingActivity extends AppCompatActivity {
     private static final String TAG = "STREAM";
     private SessionManager session;
-
     private SurfaceView mVideoSurface = null;
     private LibVLC mLibVLC = null;
     private IVLCVout vlcVout;
     private MediaPlayer mMediaPlayer = null;
     private MediaController controller;
-    private Media m;
     private File video_file;
     private static int file_first_piece_index_final;
-    int port = 8083;
-    private Set<Integer> set = new HashSet<>(); // Set that holds in Queque the Torrent Piecies. Always 5.
+    private Set<Integer> set = new HashSet<>();
     private static int PieceIndexFlow;
-
-    // We init every piece with IGNORE. Afterwards we init first,last 5 piecies.
-    // We get + -------------------- + (File)
-    // Afterwards we set ++-------------- +
-    // +++----------------------+
-    // and so on.
     private static Priority init_val_for_priorites = Priority.IGNORE;
 
 
-    private String vPath; // Video File Path
+    private String vPath;
     private static int flags = View.SYSTEM_UI_FLAG_LAYOUT_STABLE
             | View.SYSTEM_UI_FLAG_LAYOUT_HIDE_NAVIGATION
             | View.SYSTEM_UI_FLAG_LAYOUT_FULLSCREEN
@@ -83,6 +85,8 @@ public class StreamingActivity extends AppCompatActivity {
     private static TorrentHandle torrentHandle;
     private static int first_piece_index_of_video;
     private static int last_piece_index_of_video;
+    private Animation blink_animation = new AlphaAnimation(1, 0);
+
 
     ActivityStreamingBinding binding;
     @Override protected void onCreate(Bundle savedInstanceState) {
@@ -94,90 +98,88 @@ public class StreamingActivity extends AppCompatActivity {
                 WindowManager.LayoutParams.FLAG_FULLSCREEN);
         setContentView(binding.getRoot());
         config_vlc();
+        config_blinking_img_animation();
         fileIndx = getIntent().getIntExtra("fileIdx",0);
         magnet = getIntent().getStringExtra("magnet");
+        Thread main_thread = new Thread(() -> {
+            torrent_download();
+        }); main_thread.start();
+
         binding.goBack.setOnClickListener(v -> {
-            new Thread(() ->{ session.stopDht();
-                session.stop();}).start();
-            finish();});
+            if(mMediaPlayer != null) {
+                if (mMediaPlayer.isPlaying()) mMediaPlayer.pause();
+                mMediaPlayer.stop();
+            }
+            stopLogging();
+            torrent_piece_handler.removeCallbacks(torrent_video_thread);
+            if(main_thread.isAlive()) main_thread.interrupt();
+            new Thread(() -> {session.stopDht(); session.stop();}).start();
+            finish();
+        });
 
-        new Thread(() -> {try {torrent_download();} catch (InterruptedException e) {throw new RuntimeException(e);}
-        }).start();
+        Glide.with(this).load(getIntent().getStringExtra("logo_url")).into(binding.logo);
+        binding.logo.startAnimation(blink_animation);
+
+
+    }
+    private void config_blinking_img_animation(){
+        blink_animation = new AlphaAnimation(1, 0); //to change visibility from visible to invisible
+        blink_animation.setDuration(1500); //1 second duration for each animation cycle
+        blink_animation.setInterpolator(new LinearInterpolator());
+        blink_animation.setRepeatCount(Animation.INFINITE); //repeating indefinitely
+        blink_animation.setRepeatMode(Animation.REVERSE); //animation will start from end point once ended.
     }
 
 
-    private void torrent_handle_current(){
-        int e = PieceIndexFlow;
-        PieceIndexFlow = e;
-        int loop = 5; // Next Piecies to init
-        for(int l=e; l<last_piece_index_of_video;  l++){
-            if(loop == 0) break;
+    private void torrent_handle_current(int current){
+        for(int l=current; l<last_piece_index_of_video;  l++){
+            if(set.size() == 5) break;
             if(!torrentHandle.havePiece(l)){
-                set.add(l); loop--;
+                set.add(l);
                 torrentHandle.piecePriority(l , Priority.TOP_PRIORITY);
             }
         }
         print_set();
     }
-
-    /** Sets THREE Priotity to Next 5 Piecies ahead of DEFAULT PRIORITY PIECIES **/
-    /** 5[TOP_PRIOT] 5[DEFAULT_PRIO] 5[THREE_PRIO] **/
-    private void torrent_handle_THREE_priority_after_DEFAULT(){
-        int loop = 5;
-        Log.d(TAG, "torrent_handle_THREE_priority_after_DEFAULT");
-        for(int i=PieceIndexFlow; i<last_piece_index_of_video; i++) {
-            if (!torrentHandle.havePiece(i) &&
-                    torrentHandle.piecePriority(i) != Priority.TOP_PRIORITY
-                    && torrentHandle.piecePriority(i) != Priority.DEFAULT) {
-                if (loop == 0) break;
-                torrentHandle.piecePriority(i, Priority.THREE);
-                loop--;
-            }
-        }
-    }
-
-    /** Sets Default Priotity to Next 5 Piecies ahead of Set That are Incomplete **/
-    private void torrent_handle_default_priority_after_top(){
-        int loop = 5;
-        Log.d(TAG, "torrent_handle_default_priority_after_top");
-        for(int i=PieceIndexFlow; i<last_piece_index_of_video; i++) {
-            if (!torrentHandle.havePiece(i) && torrentHandle.piecePriority(i) != Priority.TOP_PRIORITY) {
-                if (loop == 0) break;
-                torrentHandle.piecePriority(i, Priority.DEFAULT);
-                loop--;
-            }
-        }
-    }
-
-    /** Sets Top Priority to incomplete piecies and updates set<T> datatype **/
     private void torrent_handle_next(){
-        int e = PieceIndexFlow+6;
-        PieceIndexFlow = e;
-        int loop = 5; // Next Piecies to init
-        for(int l=e; l<last_piece_index_of_video;  l++){
-            if(loop == 0) break;
+        for(int l=first_piece_index_of_video; l<last_piece_index_of_video;  l++){
+            if(set.size() == 5) break;
             if(!torrentHandle.havePiece(l)){
-                set.add(l); loop--;
+                set.add(l);
                 torrentHandle.piecePriority(l , Priority.TOP_PRIORITY);
             }
         }
-        torrent_handle_default_priority_after_top();
-        torrent_handle_THREE_priority_after_DEFAULT();
         print_set();
     }
+
     private void print_set(){
-        Log.d(TAG,"SET - QUEQUE (TOP_PRIORITY)");
-        for(Integer s : set) Log.d(TAG,s + " Piece Priority: " + torrentHandle.piecePriority(s));
-        Log.d(TAG,"NEXT DEFAULT PRIORITY PIECIES");
-        int n = Collections.max(set) + 1;
-        for(int i=n; i<n+5; i++) Log.d(TAG,i + " Piece Priority: " + torrentHandle.piecePriority(i));
-        n+=5;
-        Log.d(TAG,"NEXT (THREE) PRIORITY PIECIES");
-        for(int i=n; i<n+5; i++) Log.d(TAG,i + " Piece Priority: " + torrentHandle.piecePriority(i));
+        Iterator<Integer> iterator = set.iterator();
+        Log.d(TAG,"SET - TOP PRIORITY");
+        while(iterator.hasNext()) {
+            Integer s = iterator.next();
+            Log.d(TAG,s + " " + (torrentHandle.havePiece(s) ? "Available":"Unavailable") +" " + torrentHandle.piecePriority(s));
+        }
+        Log.d(TAG,"Download Speed: " + DownloadSpeed(session.stats().downloadRate()));
     }
+    public static String DownloadSpeed(long bytes) {
+        if (-1000 < bytes && bytes < 1000) {
+            return bytes + " B";
+        }
+        CharacterIterator ci = new StringCharacterIterator("kMGTPE");
+        while (bytes <= -999_950 || bytes >= 999_950) {
+            bytes /= 1000;
+            ci.next();
+        }
+        return String.format("%.1f %cB", bytes / 1000.0, ci.current());
+    }
+
     private boolean set_is_complete(){
         if(set.isEmpty()) return false;
-        for(Integer s : set) if(!torrentHandle.havePiece(s)) return false;
+        Iterator<Integer> iterator = set.iterator();
+        while(iterator.hasNext()) {
+            Integer s = iterator.next();
+            if(!torrentHandle.havePiece(s)) return false;
+        }
         return true;
     }
     private void config_vlc(){
@@ -194,18 +196,34 @@ public class StreamingActivity extends AppCompatActivity {
         controller = new MediaController(this);
         controller.setMediaPlayer(playerInterface);
         controller.setSystemUiVisibility(flags);
+        controller.setAnchorView(findViewById(R.id.video_surface));
+        controller.getChildAt(0).setBackgroundColor(getColor(R.color.transparent));
+        LinearLayout bar = (LinearLayout) ((LinearLayout) controller.getChildAt(0)).getChildAt(1);
+        bar.setPadding(26,10,26,10);
+        AppCompatSeekBar seekBar = (AppCompatSeekBar) bar.getChildAt(1);
+
+        bar.removeViewAt(1);
+        bar.addView(seekBar, 2);
+        ((MaterialTextView) bar.getChildAt(0)).setTextSize(20f);
+        ((MaterialTextView) bar.getChildAt(1)).setTextSize(20f);
+
 
         findViewById(R.id.video_surface).setOnClickListener(v -> {
+            if(binding.logo.getVisibility() == View.VISIBLE) return;
             controller.show(5000);
         });
 
     }
-    void torrent_download() throws InterruptedException {
+    void torrent_download() {
         String link = magnet;
 
         session = new SessionManager();
         AlertListener l = new TorrentAlert(); session.addListener(l); if (session.isRunning() != true) session.start();
-        waitForNodesInDHT(session);
+        try {
+            waitForNodesInDHT(session);
+        } catch (InterruptedException e) {
+            return;
+        }
         File output_folder =  new File(getFilesDir() , "/torrents");
         byte[] data = session.fetchMagnet(link, 10, output_folder);
         TorrentInfo ti = TorrentInfo.bdecode(data);
@@ -225,11 +243,16 @@ public class StreamingActivity extends AppCompatActivity {
 
         session.download(ti, output_folder, null, priorities, null, TorrentFlags.DEFAULT_DONT_DOWNLOAD);
         torrentHandle = session.find(ti.infoHash());
-        vPath = torrentHandle.torrentFile().files().filePath(fileIndx , "torrents");
-        video_file = new File(getFilesDir() + "/" + vPath);
+        if(torrentHandle.isValid()) {
+            vPath = torrentHandle.torrentFile().files().filePath(fileIndx, "torrents");
+            video_file = new File(getFilesDir() + "/" + vPath);
+        }
 
         config_piece_priorities();
         config_first_and_last_piece_priorities();
+
+
+        torrent_piece_handler.post(torrent_video_thread);
     }
     static void config_first_and_last_piece_priorities(){
         // Init 6 first and last piecies with TOP Priority. + ---------- +
@@ -242,47 +265,49 @@ public class StreamingActivity extends AppCompatActivity {
 
 
     private static void waitForNodesInDHT(final SessionManager s) throws InterruptedException {
+        if(s.isDhtRunning()){Log.d(TAG,"DHT IS STILL RUNNING...");}
+
         final CountDownLatch signal = new CountDownLatch(1);
         final Timer timer = new Timer();
         timer.schedule(new TimerTask() {
             @Override public void run() {
                 long nodes = s.stats().dhtNodes();
                 if (nodes >= 10) {
-                    System.out.println("DHT contains " + nodes + " nodes");
                     signal.countDown();
                     timer.cancel();
                 }
             }
         }, 0, 1000);
 
-        System.out.println("Waiting for nodes in DHT (10 seconds)...");
+
         boolean r = signal.await(10, TimeUnit.SECONDS);
         if (!r) {
-            System.out.println("DHT bootstrap timeout");
-            System.exit(0);
+            Log.d(TAG,"DHT CONNECTION FAILED");
+            waitForNodesInDHT(s);
         }
     }
     private static boolean original_piecies_ready(){
         int s = file_first_piece_index_final;
         int e = last_piece_index_of_video;
-        boolean l = torrentHandle.havePiece(e)
-                && torrentHandle.havePiece(e-1)
-                && torrentHandle.havePiece(e-2)
-                && torrentHandle.havePiece(e-3)
-                && torrentHandle.havePiece(e-4);
-        boolean f = torrentHandle.havePiece(s)
-                && torrentHandle.havePiece(s+1)
-                && torrentHandle.havePiece(s+2)
-                && torrentHandle.havePiece(s+3)
-                && torrentHandle.havePiece(s+4);
+        boolean l = false,f = false;
+        if(torrentHandle.isValid()) {
+            l = torrentHandle.havePiece(e)
+                    && torrentHandle.havePiece(e - 1)
+                    && torrentHandle.havePiece(e - 2)
+                    && torrentHandle.havePiece(e - 3)
+                    && torrentHandle.havePiece(e - 4);
+            f = torrentHandle.havePiece(s)
+                    && torrentHandle.havePiece(s + 1)
+                    && torrentHandle.havePiece(s + 2)
+                    && torrentHandle.havePiece(s + 3)
+                    && torrentHandle.havePiece(s + 4);
+        }
         return l && f;
     }
+
     private void setMediaVLC(){
-        controller.setAnchorView(findViewById(R.id.video_surface));
-        controller.getChildAt(0).setBackgroundColor(getColor(R.color.transparent));
         try {
             // uses file:// or http?
-            String http = "http://localhost:" + port;
             String file = "file://" + getFilesDir() + "/" + vPath;
 
             Media m = new Media(mLibVLC, Uri.parse(file));
@@ -304,54 +329,50 @@ public class StreamingActivity extends AppCompatActivity {
             mMediaPlayer.getVLCVout().setWindowSize(screenWidth, screenHeight);
             mMediaPlayer.setAspectRatio("16:9");
             mMediaPlayer.play();
+            binding.logo.getAnimation().cancel();
+            binding.logo.setVisibility(View.GONE);
+
             startLogging();
         } catch (Exception e) {
             Log.e(TAG, "Error creating Media: " + e.getMessage(), e);
         }
     }
 
-    private int seek_pos = -1;
-    private Handler handler = new Handler();
+    private Handler video_handler = new Handler();
     private Runnable updateTimeTask = new Runnable() {
-        @Override
-        public void run() {
-            if (mMediaPlayer != null && vlcVout != null && mMediaPlayer.isPlaying()) {
+        @Override public void run() {
+            if (mMediaPlayer != null && vlcVout != null) {
                 int pos =  playerInterface.getCurrentPosition();
                 int duration = playerInterface.getDuration();
-                if(duration == 0) return;
+                if(duration == 0) {video_handler.postDelayed(this, 1000); return;}
                 long bytes_per_second = video_file.length() / duration;
                 long byte_pos =  (pos * bytes_per_second);
                 int piece_index = (int) (byte_pos / torrentHandle.torrentFile().pieceLength());
-                // i Believe here piece_index is always playable but! we always gonna check the next.
-                if(!torrentHandle.havePiece(piece_index+1)){
-                    Log.d(TAG , "Stopping Playback. Reason: Index-> " + (piece_index+1) + " is not ready.");
+
+
+                    // i Believe here piece_index is always playable but! we always gonna check the next.
+                if (!torrentHandle.havePiece(piece_index + 1)) {
+                    Log.d(TAG, "(1) Stopping Playback. Index -> " + (piece_index + 1) + " is not ready.");
                     playerInterface.pause();
-                    // We stop downloading the other piecies an we focus on this.
-                    clear_set_and_piecies_priorities();
-                    PieceIndexFlow = piece_index+1;
-                    torrent_handle_current();
-                }else{
-                    Log.d(TAG , "We continue the playback next piece -> " + (piece_index+1) + " is ready.");
-                    // We continue downloading the set piecies as normal
-                    //if(!playerInterface.isPlaying()) playerInterface.start();
-                }
-            }else if(mMediaPlayer != null && vlcVout != null && !mMediaPlayer.isPlaying()){
-                if(torrentHandle.havePiece(PieceIndexFlow)) {
-                    if (seek_pos != -1) {
-                        mMediaPlayer.setPosition((float) seek_pos / playerInterface.getDuration());
-                        playerInterface.start();
-                        seek_pos = -1;
-                    }else{
-                        playerInterface.start();
+                    if(binding.logo.getAnimation() == null)  binding.logo.startAnimation(blink_animation);
+                    if(binding.logo.getVisibility() == View.GONE) binding.logo.setVisibility(View.VISIBLE);
+                    print_set();
+                } else {
+                    Log.d(TAG, "We continue the playback next piece -> " + (piece_index + 1) + " is ready.");
+                    if (!mMediaPlayer.isPlaying()) mMediaPlayer.play();
+                    if(binding.logo.getAnimation() != null){
+                        binding.logo.getAnimation().cancel();
+                        binding.logo.setVisibility(View.GONE);
                     }
                 }
+
             }
 
-            handler.postDelayed(this, 1000);
+            video_handler.postDelayed(this, 1000);
         }
     };
-    public void startLogging() {handler.post(updateTimeTask); }
-    public void stopLogging() {handler.removeCallbacks(updateTimeTask);}
+    public void startLogging() {video_handler.post(updateTimeTask); }
+    public void stopLogging() {video_handler.removeCallbacks(updateTimeTask);}
 
     private void clear_set_and_piecies_priorities(){
         Iterator<Integer> iterator = set.iterator();
@@ -361,6 +382,7 @@ public class StreamingActivity extends AppCompatActivity {
                 torrentHandle.piecePriority(s , Priority.IGNORE);
         } set.clear();
     }
+
     private MediaController.MediaPlayerControl playerInterface = new MediaController.MediaPlayerControl() {
         public int getBufferPercentage() {return 0;}
         public int getCurrentPosition() {
@@ -389,22 +411,14 @@ public class StreamingActivity extends AppCompatActivity {
             long bytes_per_second = video_file.length() / getDuration();
             long byte_pos = pos * bytes_per_second;
             int piece_index = (int) (byte_pos / torrentHandle.torrentFile().pieceLength());
-            Log.d(TAG, "Seek Piece Index: " + piece_index );
-            seek_pos = pos;
+            Log.d(TAG, "Seek Piece Index: " + piece_index + " Status: " + (torrentHandle.havePiece(piece_index) ? "Ready" : "Not Ready"));
             if(torrentHandle.havePiece(piece_index)) {
                 if (mMediaPlayer != null) {
                     mMediaPlayer.setPosition((float) pos / getDuration(), false);
                     if(!mMediaPlayer.isPlaying()) mMediaPlayer.play();
                 }
-            }else{
-                /** Piece Unavailable **/
-                /*FIXME SELECT SEEK INDEX, CLEAR PRIORITIES OF SET,
-                   SET TOP_PRIORITY TO SEEK PIECE INDEX AND MAKE MEDIA WAIT UNTIL PIECE IS AVAILABLE
-                **/
-
-                //mMediaPlayer.setPosition((float) pos / getDuration(), false);
-                //pause();
             }
+
         }
 
         public void start() {
@@ -425,7 +439,7 @@ public class StreamingActivity extends AppCompatActivity {
         }
     };
     private class TorrentAlert implements AlertListener{
-        boolean server = false;
+
         @Override public int[] types() {return null;}
         @Override public void alert(Alert<?> alert) {
             switch (alert.type()) {
@@ -433,23 +447,6 @@ public class StreamingActivity extends AppCompatActivity {
                 case PIECE_FINISHED:
                     int index = (int) (((PieceFinishedAlert) alert).pieceIndex());
                     Log.d(TAG , "Piece: " + index + " completed");
-
-                    if(set_is_complete()){
-                        clear_set_and_piecies_priorities();
-                        torrent_handle_next();
-                    }
-
-                    if(original_piecies_ready()) {
-                        if(server == false) {
-                            server = true;
-                            // Run Once
-                            /** Testing::Comment **/
-                            torrent_handle_next();
-                            setMediaVLC();
-                        }
-                    }
-
-
                     break;
                 case TORRENT_FINISHED: ((TorrentFinishedAlert) alert).handle().pause();   break;
                 case METADATA_RECEIVED: Log.d(TAG, "metadata received"); break;
@@ -458,6 +455,28 @@ public class StreamingActivity extends AppCompatActivity {
         }
     }
 
+    private boolean media_is_set = false;
+    private Handler torrent_piece_handler = new Handler();
+    private Runnable torrent_video_thread = new Runnable() {
+        @Override public void run() {
+            Log.d("SPEED","Download Speed: " + DownloadSpeed(session.stats().downloadRate()));
+
+
+            if(set_is_complete()) {
+                clear_set_and_piecies_priorities();
+                torrent_handle_next();
+            }
+
+            if(original_piecies_ready()) {
+                if(media_is_set == false) {
+                    media_is_set = true;
+                    torrent_handle_next();
+                    setMediaVLC();
+                }
+            }
+            torrent_piece_handler.postDelayed(this, 1000);
+        }
+    };
 
     private void release_libvlc(){
         if(mLibVLC == null) return;
@@ -482,7 +501,6 @@ public class StreamingActivity extends AppCompatActivity {
             mLibVLC.release();
             mLibVLC = null;
         }
-        stopLogging();
     }
     @Override protected void onResume() {
         super.onResume();
