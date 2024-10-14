@@ -1,6 +1,5 @@
 package gr.xmp.torstream.activities;
 
-
 import android.net.Uri;
 import android.os.Bundle;
 import android.os.Handler;
@@ -15,29 +14,22 @@ import android.view.animation.Animation;
 import android.view.animation.LinearInterpolator;
 import android.widget.LinearLayout;
 import android.widget.MediaController;
-
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.appcompat.app.AppCompatDelegate;
 import androidx.appcompat.widget.AppCompatSeekBar;
-
-
 import com.bumptech.glide.Glide;
 import com.google.android.material.textview.MaterialTextView;
-
 import org.libtorrent4j.*;
 import org.libtorrent4j.alerts.*;
 import org.videolan.libvlc.LibVLC;
 import org.videolan.libvlc.Media;
 import org.videolan.libvlc.MediaPlayer;
 import org.videolan.libvlc.interfaces.IVLCVout;
-
 import java.io.File;
-import java.io.IOException;
 import java.text.CharacterIterator;
 import java.text.StringCharacterIterator;
 import java.util.ArrayList;
 import java.util.Collections;
-import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Iterator;
 import java.util.Set;
@@ -45,10 +37,8 @@ import java.util.Timer;
 import java.util.TimerTask;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
-
 import gr.xmp.torstream.R;
 import gr.xmp.torstream.databinding.ActivityStreamingBinding;
-
 
 public class StreamingActivity extends AppCompatActivity {
     private static final String TAG = "STREAM";
@@ -63,6 +53,7 @@ public class StreamingActivity extends AppCompatActivity {
     private Set<Integer> set = new HashSet<>();
     private static int PieceIndexFlow;
     private static Priority init_val_for_priorites = Priority.IGNORE;
+    private static boolean VIDEO_PAUSED_MANUAL = false;
 
 
     private String vPath;
@@ -149,6 +140,14 @@ public class StreamingActivity extends AppCompatActivity {
                 torrentHandle.piecePriority(l , Priority.TOP_PRIORITY);
             }
         }
+
+        int max_set = Collections.max(set)+1;
+        for(int i=max_set; i<max_set+5; i++) {
+            if (i > last_piece_index_of_video) break;
+            torrentHandle.piecePriority(i, Priority.DEFAULT);
+        }
+
+
         print_set();
     }
 
@@ -159,6 +158,12 @@ public class StreamingActivity extends AppCompatActivity {
             Integer s = iterator.next();
             Log.d(TAG,s + " " + (torrentHandle.havePiece(s) ? "Available":"Unavailable") +" " + torrentHandle.piecePriority(s));
         }
+        int max_set = Collections.max(set)+1;
+        for(int s=max_set; s<max_set+5; s++) {
+            if (s > last_piece_index_of_video) break;
+            Log.d(TAG, s + " " + (torrentHandle.havePiece(s) ? "Available" : "Unavailable") + " " + torrentHandle.piecePriority(s));
+        }
+
         Log.d(TAG,"Download Speed: " + DownloadSpeed(session.stats().downloadRate()));
     }
     public static String DownloadSpeed(long bytes) {
@@ -350,16 +355,19 @@ public class StreamingActivity extends AppCompatActivity {
                 int piece_index = (int) (byte_pos / torrentHandle.torrentFile().pieceLength());
 
 
-                    // i Believe here piece_index is always playable but! we always gonna check the next.
+                // i Believe here piece_index is always playable but! we always gonna check the next.
                 if (!torrentHandle.havePiece(piece_index + 1)) {
                     Log.d(TAG, "(1) Stopping Playback. Index -> " + (piece_index + 1) + " is not ready.");
-                    playerInterface.pause();
+                    mMediaPlayer.pause();
                     if(binding.logo.getAnimation() == null)  binding.logo.startAnimation(blink_animation);
                     if(binding.logo.getVisibility() == View.GONE) binding.logo.setVisibility(View.VISIBLE);
                     print_set();
                 } else {
                     Log.d(TAG, "We continue the playback next piece -> " + (piece_index + 1) + " is ready.");
-                    if (!mMediaPlayer.isPlaying()) mMediaPlayer.play();
+
+                    if(VIDEO_PAUSED_MANUAL == true && mMediaPlayer.isPlaying()) {mMediaPlayer.pause(); VIDEO_PAUSED_MANUAL = false;}
+                    else if(VIDEO_PAUSED_MANUAL == false && !mMediaPlayer.isPlaying()) mMediaPlayer.play();
+
                     if(binding.logo.getAnimation() != null){
                         binding.logo.getAnimation().cancel();
                         binding.logo.setVisibility(View.GONE);
@@ -374,13 +382,8 @@ public class StreamingActivity extends AppCompatActivity {
     public void startLogging() {video_handler.post(updateTimeTask); }
     public void stopLogging() {video_handler.removeCallbacks(updateTimeTask);}
 
-    private void clear_set_and_piecies_priorities(){
-        Iterator<Integer> iterator = set.iterator();
-        while(iterator.hasNext()) {
-            Integer s = iterator.next();
-            if(torrentHandle.piecePriority(s) == Priority.TOP_PRIORITY)
-                torrentHandle.piecePriority(s , Priority.IGNORE);
-        } set.clear();
+    private void clear_set(){
+         set.clear();
     }
 
     private MediaController.MediaPlayerControl playerInterface = new MediaController.MediaPlayerControl() {
@@ -401,6 +404,8 @@ public class StreamingActivity extends AppCompatActivity {
         }
         public void pause() {
             if(vlcVout != null) mMediaPlayer.pause();
+            VIDEO_PAUSED_MANUAL = true;
+            Log.d(TAG,"VIDEO PAUSED!");
         }
 
         public void seekTo(int pos) {
@@ -422,8 +427,9 @@ public class StreamingActivity extends AppCompatActivity {
         }
 
         public void start() {
-            if(vlcVout != null)
-                mMediaPlayer.play();
+            if(vlcVout != null) mMediaPlayer.play();
+            VIDEO_PAUSED_MANUAL = false;
+
         }
         public boolean canPause() {
             return true;
@@ -459,11 +465,11 @@ public class StreamingActivity extends AppCompatActivity {
     private Handler torrent_piece_handler = new Handler();
     private Runnable torrent_video_thread = new Runnable() {
         @Override public void run() {
-            Log.d("SPEED","Download Speed: " + DownloadSpeed(session.stats().downloadRate()));
+            Log.d("SPEED","Download Speed: " + DownloadSpeed(session.stats().downloadRate()) + " DHT(" + session.stats().dhtNodes() +")");
 
 
             if(set_is_complete()) {
-                clear_set_and_piecies_priorities();
+                clear_set();
                 torrent_handle_next();
             }
 
