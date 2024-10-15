@@ -103,8 +103,10 @@ public class StreamingActivity extends AppCompatActivity {
             }
             stopLogging();
             torrent_piece_handler.removeCallbacks(torrent_video_thread);
+            if(session != null)
+                if(session.isDhtRunning())
+                    new Thread(() -> {session.stopDht(); session.stop();}).start();
             if(main_thread.isAlive()) main_thread.interrupt();
-            new Thread(() -> {session.stopDht(); session.stop();}).start();
             finish();
         });
 
@@ -223,6 +225,8 @@ public class StreamingActivity extends AppCompatActivity {
         String link = magnet;
 
         session = new SessionManager();
+        if(session.isRunning()) session.stop();
+
         AlertListener l = new TorrentAlert(); session.addListener(l); if (session.isRunning() != true) session.start();
         try {
             waitForNodesInDHT(session);
@@ -270,7 +274,8 @@ public class StreamingActivity extends AppCompatActivity {
 
 
     private static void waitForNodesInDHT(final SessionManager s) throws InterruptedException {
-        if(s.isDhtRunning()){Log.d(TAG,"DHT IS STILL RUNNING...");}
+        if(s.isDhtRunning()){Log.d(TAG,"DHT IS STILL RUNNING...");
+        }
 
         final CountDownLatch signal = new CountDownLatch(1);
         final Timer timer = new Timer();
