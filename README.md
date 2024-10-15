@@ -8,9 +8,6 @@
 ++++--------+ <br/> 
 +++++-------+
 
-### TODO
-1. BUILD JNI() AND CONNECT NODEJS ON NATIVE ANDROID.
-2. OPEN HTTP SERVER OVER NODEJS WITH 206 PARTIAL CONTENT FOR THE VIDEO.
 ### Technologies Used
 - VLC
 - Libtorrent4j
