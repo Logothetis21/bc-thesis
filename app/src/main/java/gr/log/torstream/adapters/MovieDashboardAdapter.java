@@ -1,4 +1,4 @@
-package gr.xmp.torstream.adapters;
+package gr.log.torstream.adapters;
 
 import android.app.Activity;
 import android.content.Context;
@@ -21,9 +21,9 @@ import com.google.android.flexbox.JustifyContent;
 
 import java.io.Serializable;
 
-import gr.xmp.torstream.R;
-import gr.xmp.torstream.activities.MainActivity;
-import gr.xmp.torstream.models.Movie;
+import gr.log.torstream.R;
+import gr.log.torstream.activities.MainActivity;
+import gr.log.torstream.models.Movie;
 
 public class MovieDashboardAdapter extends RecyclerView.Adapter<MovieDashboardAdapter.default_holder> {
     private Context context;

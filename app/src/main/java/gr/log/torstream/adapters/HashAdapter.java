@@ -1,4 +1,4 @@
-package gr.xmp.torstream.adapters;
+package gr.log.torstream.adapters;
 
 import android.content.Context;
 import android.view.LayoutInflater;
@@ -9,8 +9,8 @@ import androidx.annotation.NonNull;
 import androidx.recyclerview.widget.RecyclerView;
 import java.io.Serializable;
 import java.util.ArrayList;
-import gr.xmp.torstream.R;
-import gr.xmp.torstream.models.Hash;
+import gr.log.torstream.R;
+import gr.log.torstream.models.Hash;
 
 public class HashAdapter extends RecyclerView.Adapter<RecyclerView.ViewHolder> {
     private Context context;

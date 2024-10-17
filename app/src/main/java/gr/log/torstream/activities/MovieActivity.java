@@ -1,4 +1,4 @@
-package gr.xmp.torstream.activities;
+package gr.log.torstream.activities;
 
 import android.content.Intent;
 import android.os.Bundle;
@@ -15,11 +15,11 @@ import org.json.JSONObject;
 
 import java.io.IOException;
 import java.util.ArrayList;
-import gr.xmp.torstream.adapters.HashAdapter;
-import gr.xmp.torstream.adapters.MovieDashboardAdapter;
-import gr.xmp.torstream.databinding.ActivityMovieDashboardBinding;
-import gr.xmp.torstream.models.Hash;
-import gr.xmp.torstream.models.Movie;
+import gr.log.torstream.adapters.HashAdapter;
+import gr.log.torstream.adapters.MovieDashboardAdapter;
+import gr.log.torstream.databinding.ActivityMovieDashboardBinding;
+import gr.log.torstream.models.Hash;
+import gr.log.torstream.models.Movie;
 import okhttp3.OkHttpClient;
 import okhttp3.Request;
 import okhttp3.Response;

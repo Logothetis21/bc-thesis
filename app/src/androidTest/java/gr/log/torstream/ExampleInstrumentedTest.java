@@ -1,4 +1,4 @@
-package gr.xmp.torstream;
+package gr.log.torstream;
 
 import android.content.Context;
 

@@ -1,4 +1,4 @@
-package gr.xmp.torstream;
+package gr.log.torstream;
 
 import org.junit.Test;
 

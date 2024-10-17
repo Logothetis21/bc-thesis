@@ -1,4 +1,4 @@
-package gr.xmp.torstream.activities;
+package gr.log.torstream.activities;
 
 import android.content.Intent;
 import android.os.Bundle;
@@ -19,14 +19,14 @@ import org.json.JSONObject;
 
 import java.io.IOException;
 import java.util.ArrayList;
-import gr.xmp.torstream.databinding.ActivityMainBinding;
+import gr.log.torstream.databinding.ActivityMainBinding;
 
-import gr.xmp.torstream.models.Movie;
-import gr.xmp.torstream.models.String_;
+import gr.log.torstream.models.Movie;
+import gr.log.torstream.models.String_;
 import okhttp3.OkHttpClient;
 import okhttp3.Request;
 import okhttp3.Response;
-import gr.xmp.torstream.adapters.MovieLabelAdapter;
+import gr.log.torstream.adapters.MovieLabelAdapter;
 
 
 public class MainActivity extends AppCompatActivity {

@@ -1,4 +1,4 @@
-package gr.xmp.torstream.activities;
+package gr.log.torstream.activities;
 
 import android.net.Uri;
 import android.os.Bundle;
@@ -37,8 +37,8 @@ import java.util.Timer;
 import java.util.TimerTask;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
-import gr.xmp.torstream.R;
-import gr.xmp.torstream.databinding.ActivityStreamingBinding;
+import gr.log.torstream.R;
+import gr.log.torstream.databinding.ActivityStreamingBinding;
 
 public class StreamingActivity extends AppCompatActivity {
     private static final String TAG = "STREAM";
@@ -85,8 +85,7 @@ public class StreamingActivity extends AppCompatActivity {
         AppCompatDelegate.setDefaultNightMode(AppCompatDelegate.MODE_NIGHT_YES);
         binding = ActivityStreamingBinding.inflate(getLayoutInflater());
         requestWindowFeature(Window.FEATURE_NO_TITLE);
-        getWindow().setFlags(WindowManager.LayoutParams.FLAG_FULLSCREEN,
-                WindowManager.LayoutParams.FLAG_FULLSCREEN);
+        getWindow().setFlags(WindowManager.LayoutParams.FLAG_FULLSCREEN,WindowManager.LayoutParams.FLAG_FULLSCREEN);
         setContentView(binding.getRoot());
         config_vlc();
         config_blinking_img_animation();
@@ -103,9 +102,7 @@ public class StreamingActivity extends AppCompatActivity {
             }
             stopLogging();
             torrent_piece_handler.removeCallbacks(torrent_video_thread);
-            if(session != null)
-                if(session.isDhtRunning())
-                    new Thread(() -> {session.stopDht(); session.stop();}).start();
+            new Thread(() -> {session.stopDht(); session.stop();}).start();
             if(main_thread.isAlive()) main_thread.interrupt();
             finish();
         });
@@ -275,6 +272,7 @@ public class StreamingActivity extends AppCompatActivity {
 
     private static void waitForNodesInDHT(final SessionManager s) throws InterruptedException {
         if(s.isDhtRunning()){Log.d(TAG,"DHT IS STILL RUNNING...");
+            new Thread(() -> {s.stopDht();}).start();
         }
 
         final CountDownLatch signal = new CountDownLatch(1);

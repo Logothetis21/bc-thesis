@@ -3,14 +3,14 @@ plugins {
 }
 
 android {
-    namespace = "gr.xmp.torstream"
+    namespace = "gr.log.torstream"
     compileSdk = 34
     // Link Gradle
 
 
 
     defaultConfig {
-        applicationId = "gr.xmp.torstream"
+        applicationId = "gr.log.torstream"
         minSdk = 24
         targetSdk = 35
         versionCode = 1

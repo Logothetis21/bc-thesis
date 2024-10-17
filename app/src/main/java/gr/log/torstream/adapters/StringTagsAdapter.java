@@ -1,4 +1,4 @@
-package gr.xmp.torstream.adapters;
+package gr.log.torstream.adapters;
 
 import android.content.Context;
 import android.view.LayoutInflater;
@@ -11,8 +11,8 @@ import androidx.recyclerview.widget.RecyclerView;
 import java.io.Serializable;
 import java.util.ArrayList;
 
-import gr.xmp.torstream.R;
-import gr.xmp.torstream.models.String_;
+import gr.log.torstream.R;
+import gr.log.torstream.models.String_;
 
 
 public class StringTagsAdapter extends RecyclerView.Adapter<RecyclerView.ViewHolder> implements Serializable {

@@ -1,4 +1,4 @@
-package gr.xmp.torstream.models;
+package gr.log.torstream.models;
 
 import java.io.Serializable;
 
