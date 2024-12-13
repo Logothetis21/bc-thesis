@@ -64,11 +64,11 @@ public class MainActivity extends AppCompatActivity {
             try {
                 Response response = client.newCall(request).execute();
                 if(response.isSuccessful()){
-                    JSONArray metas = new JSONObject(response.body().string()).getJSONArray("metas"); //gg
+                    JSONArray metas = new JSONObject(response.body().string()).getJSONArray("metas");
                     for(int i=0; i<metas.length(); i++){
                         Movie movie_Object = new Movie();
                         JSONObject movie = metas.getJSONObject(i);
-                        movie_Object.name = !movie.isNull("name") ? movie.getString("name") : "";
+                        movie_Object.name = !movie.isNull("name") ? movie.getString("name") : ""; //bg
                         movie_Object.imbd_code = !movie.isNull("id") ? movie.getString("id") : "";
                         movie_Object.poster_img = !movie.isNull("poster") ? movie.getString("poster") : "";
                         movie_Object.background_img = !movie.isNull("background") ? movie.getString("background") : "";
