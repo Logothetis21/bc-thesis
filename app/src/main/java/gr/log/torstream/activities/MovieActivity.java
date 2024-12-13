@@ -20,6 +20,7 @@ import gr.log.torstream.adapters.MovieDashboardAdapter;
 import gr.log.torstream.databinding.ActivityMovieDashboardBinding;
 import gr.log.torstream.models.Hash;
 import gr.log.torstream.models.Movie;
+import gr.log.torstream.models.String_;
 import okhttp3.OkHttpClient;
 import okhttp3.Request;
 import okhttp3.Response;
@@ -55,6 +56,7 @@ public class MovieActivity extends AppCompatActivity {
     private ArrayList<Hash> hash_list = new ArrayList<>();
     private MovieDashboardAdapter movie_details_adapter;
     private HashAdapter hashes_adapter;
+    private Movie movie;
 
     @Override protected void onCreate(@Nullable Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -62,8 +64,9 @@ public class MovieActivity extends AppCompatActivity {
         binding = ActivityMovieDashboardBinding.inflate(getLayoutInflater());
         setContentView(binding.getRoot());
         String imdb = (String) getIntent().getSerializableExtra("movie_imbd_code");
+        movie = (Movie) getIntent().getSerializableExtra("movie_object");
 
-        movie_details_adapter = new MovieDashboardAdapter((Movie) getIntent().getSerializableExtra("movie_object"), this);
+        movie_details_adapter = new MovieDashboardAdapter(movie, this);
         hashes_adapter = new HashAdapter(hash_list, this, h -> {
             Intent i = new Intent(this , StreamingActivity.class);
             i.putExtra("magnet" , fetch_magnet_link(h.hash));
@@ -73,13 +76,12 @@ public class MovieActivity extends AppCompatActivity {
             overridePendingTransition(0,0);
         });
 
-        ConcatAdapter concatAdapter = new ConcatAdapter(movie_details_adapter, hashes_adapter);
-        binding.recycler.setAdapter(concatAdapter);
+        fetch_background(imdb);
 
         new Thread(() ->{
             OkHttpClient client = new OkHttpClient();
             Request request = new Request.Builder()
-                    .url("https://torrentio.strem.fun/qualityfilter=brremux,hdrall,dolbyvision,4k,720p,480p,scr,cam/stream/movie/" + imdb + ".json")
+                    .url("https://caching.stremio.net/publicdomainmovies.now.sh/stream/movie/"+imdb+".json")
                     .build();
             try {
                 Response response = client.newCall(request).execute();
@@ -106,6 +108,34 @@ public class MovieActivity extends AppCompatActivity {
                 runOnUiThread(() -> Toast.makeText(this, "Error on fetch: " + e.getMessage(), Toast.LENGTH_LONG).show());
             }
 
+        }).start();
+    }
+
+    private void fetch_background(String id){
+        String link = "https://v3-cinemeta.strem.io/meta/movie/"+id+".json";
+        new Thread(() ->{
+            OkHttpClient client = new OkHttpClient();
+            Request request = new Request.Builder()
+                    .url(link)
+                    .build();
+            try {
+                Response response = client.newCall(request).execute();
+                if(response.isSuccessful()){
+                    JSONObject obj = new JSONObject(response.body().string()).getJSONObject("meta");
+                    movie.background_img = obj.getString("background");
+                    movie.logo_img = obj.getString("logo");
+                    ArrayList<String_> arr = movie.runtime_year_imdb;
+                    arr.add(new String_(obj.getString("year") , false));
+                } else throw new IOException("Unexpected response code. " + response);
+            } catch (IOException | JSONException e) {
+                e.printStackTrace();
+                runOnUiThread(() -> Toast.makeText(this, "Error on fetch: " + e.getMessage(), Toast.LENGTH_LONG).show());
+            }
+
+            runOnUiThread(() ->{
+                ConcatAdapter concatAdapter = new ConcatAdapter(movie_details_adapter, hashes_adapter);
+                binding.recycler.setAdapter(concatAdapter);
+            });
         }).start();
     }
 

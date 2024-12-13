@@ -261,7 +261,7 @@ public class StreamingActivity extends AppCompatActivity {
         torrent_piece_handler.post(torrent_video_thread);
     }
     static void config_first_and_last_piece_priorities(){
-        // Init 6 first and last piecies with TOP Priority. + ---------- +
+
         for(int k=0; k<=5; k++) torrentHandle.piecePriority(first_piece_index_of_video + k, Priority.TOP_PRIORITY);
         for(int k=last_piece_index_of_video; k>=last_piece_index_of_video-5; k--) torrentHandle.piecePriority(k , Priority.TOP_PRIORITY);
     }
@@ -315,7 +315,6 @@ public class StreamingActivity extends AppCompatActivity {
 
     private void setMediaVLC(){
         try {
-            // uses file:// or http?
             String file = "file://" + getFilesDir() + "/" + vPath;
 
             Media m = new Media(mLibVLC, Uri.parse(file));
@@ -337,7 +336,7 @@ public class StreamingActivity extends AppCompatActivity {
             mMediaPlayer.getVLCVout().setWindowSize(screenWidth, screenHeight);
             mMediaPlayer.setAspectRatio("16:9");
             mMediaPlayer.play();
-            binding.logo.getAnimation().cancel();
+            binding.logo.getAnimation().cancel(); //ejafanizete to logo ths tainias pou fortonei gia na paijei
             binding.logo.setVisibility(View.GONE);
 
             startLogging();

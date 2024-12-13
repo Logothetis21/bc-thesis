@@ -59,7 +59,7 @@ public class MainActivity extends AppCompatActivity {
         new Thread(() ->{
             OkHttpClient client = new OkHttpClient();
             Request request = new Request.Builder()
-                    .url("https://cinemeta-catalogs.strem.io/top/catalog/movie/top.json")
+                    .url("https://caching.stremio.net/publicdomainmovies.now.sh/catalog/movie/publicdomainmovies.json")
                     .build();
             try {
                 Response response = client.newCall(request).execute();
@@ -69,7 +69,7 @@ public class MainActivity extends AppCompatActivity {
                         Movie movie_Object = new Movie();
                         JSONObject movie = metas.getJSONObject(i);
                         movie_Object.name = !movie.isNull("name") ? movie.getString("name") : "";
-                        movie_Object.imbd_code = !movie.isNull("imdb_id") ? movie.getString("imdb_id") : "";
+                        movie_Object.imbd_code = !movie.isNull("id") ? movie.getString("id") : "";
                         movie_Object.poster_img = !movie.isNull("poster") ? movie.getString("poster") : "";
                         movie_Object.background_img = !movie.isNull("background") ? movie.getString("background") : "";
                         movie_Object.logo_img = !movie.isNull("logo") ? movie.getString("logo") : "";

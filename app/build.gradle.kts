@@ -50,13 +50,11 @@ dependencies {
     implementation("com.github.ybq:Android-SpinKit:1.4.0")
     implementation("org.videolan.android:libvlc-all:3.5.4-eap4")
 
-    implementation("org.libtorrent4j:libtorrent4j:2.1.0-31")
-    implementation("org.libtorrent4j:libtorrent4j-android-x86_64:2.1.0-31")
-    implementation ("org.libtorrent4j:libtorrent4j-android-arm64:2.1.0-31")
-    implementation ("org.libtorrent4j:libtorrent4j-android-arm:2.1.0-31")
-    implementation ("org.libtorrent4j:libtorrent4j-android-x86_64:2.1.0-31")
-    implementation ("org.libtorrent4j:libtorrent4j-android-x86:2.1.0-31")
-
+    implementation("org.libtorrent4j:libtorrent4j:2.1.0-35")
+    implementation("org.libtorrent4j:libtorrent4j-android-x86_64:2.1.0-35")
+    implementation ("org.libtorrent4j:libtorrent4j-android-arm64:2.1.0-35")
+    implementation ("org.libtorrent4j:libtorrent4j-android-arm:2.1.0-35")
+    implementation ("org.libtorrent4j:libtorrent4j-android-x86:2.1.0-35")
 
     implementation("androidx.recyclerview:recyclerview:1.3.2")
 }
