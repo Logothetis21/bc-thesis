@@ -64,7 +64,7 @@ public class MainActivity extends AppCompatActivity {
             try {
                 Response response = client.newCall(request).execute();
                 if(response.isSuccessful()){
-                    JSONArray metas = new JSONObject(response.body().string()).getJSONArray("metas");
+                    JSONArray metas = new JSONObject(response.body().string()).getJSONArray("metas"); //gg
                     for(int i=0; i<metas.length(); i++){
                         Movie movie_Object = new Movie();
                         JSONObject movie = metas.getJSONObject(i);
